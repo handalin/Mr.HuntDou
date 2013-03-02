@@ -1,10 +1,13 @@
 # -*-coding:utf-8-*-
+# (140, 193)
+from bookxing_db.models import *
 from htmlentitydefs import entitydefs
 from HTMLParser import HTMLParser
 import sys, re, urllib2, Image
 import os
 reload(sys)
 sys.setdefaultencoding('utf-8')
+# Declare a list of interesting tables.
 
 def parseImgLink(url):
   fp = urllib2.urlopen(url)
@@ -78,24 +81,25 @@ class InfoParser(HTMLParser):
     info = self.HTML
     # deal with the data
     try:
-      author = re.findall( u'作者</span>:.*?>(.+?)</a>'.encode('utf-8'), info, re.S )[0]
+      author = re.findall( u'作者</span>:.+?>(.+?)</a>'.encode('utf-8'), info, re.S )[0]
       self.info.update({'author':author})
     except IndexError:
       pass
     try:
-      publisher = re.findall(u'出版社:</span>(.+?)<br/*>'.encode('utf-8'), info )[0][1:]
+      publisher = re.findall(u'出版社:</span>(.+?)<br/.*>'.encode('utf-8'), info, re.S )[0][1:]
       self.info.update({'publisher':publisher})
     except IndexError:
       pass
     try:
-      numOfPages = re.findall(u'页数:</span>(.+?)<br/*>'.encode('utf-8'), info )[0][1:]
+      numOfPages = re.findall(u'页数:</span>(.+?)<br/.*>'.encode('utf-8'), info, re.S )[0][1:]
       self.info.update({'numOfPages':numOfPages})
     except IndexError:
       pass
     try:
-      ISBN = re.findall(u'ISBN:</span>(.+?)<br/*>'.encode('utf-8'), info )[0][1:]
+      ISBN = re.findall(r'ISBN:</span>(.+?)<br/>', info )[0][1:]
       self.info.update({'ISBN':ISBN})
     except IndexError:
+      self.info.update({'ISBN':''})
       pass
 
     def deal_with_intro(intro):
@@ -127,19 +131,6 @@ class UrlParser(HTMLParser):
         if k == 'href' and re.match(r'http://book.douban.com/subject/\d+/*$', v):
           self.hrefs.append(v)
           #print v
-  """
-  def handle_endtag(self, tag):
-    pass
-
-  def handle_data(self, data):
-    pass
-
-  def handle_endtag(self, tag):
-    pass
-
-  def cleanse(self):
-    pass
-  """
 
 def get_books_by_search(keyword):
   p = UrlParser()
@@ -163,12 +154,14 @@ def get_books_by_search(keyword):
     book = q.info
 
     # get the infos from the book
-    ISBN = book.get('ISBN', ' ')
+    ISBN = book.get('ISBN', '')
+    if not ISBN:
+      continue
     title = book.get('title', '......')
     authors = book.get('author', '')
-    publisher = book.get('publisher', ' ')
-    numOfPages = book.get('numOfPages', ' ')
-    intro = book.get('intro', '  ')
+    publisher = book.get('publisher', '')
+    numOfPages = book.get('numOfPages', '')
+    intro = book.get('intro', '')
     rating = book.get('rating', '')
     img_name = 'bookxing/pic/thumbs/big/%s.jpg' % ISBN
     image_path = '%s.jpg' % ISBN
@@ -185,7 +178,7 @@ def get_books_by_search(keyword):
       read_cnt = 0,
       image_path = image_path,
     )
-    if book not in book_list:
+    if book not in book_list and book.get('ISBN', ''):
       book_list.append(book)
     fd = urllib2.urlopen(q.info['image_urls'])
     img = fd.read()
@@ -215,13 +208,6 @@ def get_books_by_search(keyword):
             new_book.save()
           except BaseException:
             pass
-
-      
-
-    print 'done!!!!', book
-    #except BaseException:
-    #  print '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
-    #  print authors[6:9]
 
   return book_list
   """
