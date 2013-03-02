@@ -1,5 +1,4 @@
 # -*-coding:utf-8-*-
-from bookxing_db.models import *
 from htmlentitydefs import entitydefs
 from HTMLParser import HTMLParser
 import sys, re, urllib2, Image
